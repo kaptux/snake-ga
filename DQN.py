@@ -1,6 +1,7 @@
 from keras.optimizers import Adam
 from keras.models import Sequential
 from keras.layers.core import Dense, Dropout
+from keras.utils import to_categorical
 import random
 import numpy as np
 import pandas as pd
@@ -19,7 +20,7 @@ class DQNAgent(object):
         self.learning_rate = 0.0005
         self.model = self.network()
         #self.model = self.network("weights.hdf5")
-        self.epsilon = 0
+        self.epsilon = 1
         self.actual = []
         self.memory = []
 
@@ -27,24 +28,24 @@ class DQNAgent(object):
 
         state = [
             (player.x_change == 20 and player.y_change == 0 and ((list(map(add, player.position[-1], [20, 0])) in player.position) or
-            player.position[-1][0] + 20 >= (game.game_width - 20))) or (player.x_change == -20 and player.y_change == 0 and ((list(map(add, player.position[-1], [-20, 0])) in player.position) or
-            player.position[-1][0] - 20 < 20)) or (player.x_change == 0 and player.y_change == -20 and ((list(map(add, player.position[-1], [0, -20])) in player.position) or
-            player.position[-1][-1] - 20 < 20)) or (player.x_change == 0 and player.y_change == 20 and ((list(map(add, player.position[-1], [0, 20])) in player.position) or
-            player.position[-1][-1] + 20 >= (game.game_height-20))),  # danger straight
+                                                                 player.position[-1][0] + 20 >= (game.game_width - 20))) or (player.x_change == -20 and player.y_change == 0 and ((list(map(add, player.position[-1], [-20, 0])) in player.position) or
+                                                                                                                                                                                  player.position[-1][0] - 20 < 20)) or (player.x_change == 0 and player.y_change == -20 and ((list(map(add, player.position[-1], [0, -20])) in player.position) or
+                                                                                                                                                                                                                                                                              player.position[-1][-1] - 20 < 20)) or (player.x_change == 0 and player.y_change == 20 and ((list(map(add, player.position[-1], [0, 20])) in player.position) or
+                                                                                                                                                                                                                                                                                                                                                                          player.position[-1][-1] + 20 >= (game.game_height-20))),  # danger straight
 
-            (player.x_change == 0 and player.y_change == -20 and ((list(map(add,player.position[-1],[20, 0])) in player.position) or
-            player.position[ -1][0] + 20 > (game.game_width-20))) or (player.x_change == 0 and player.y_change == 20 and ((list(map(add,player.position[-1],
-            [-20,0])) in player.position) or player.position[-1][0] - 20 < 20)) or (player.x_change == -20 and player.y_change == 0 and ((list(map(
-            add,player.position[-1],[0,-20])) in player.position) or player.position[-1][-1] - 20 < 20)) or (player.x_change == 20 and player.y_change == 0 and (
-            (list(map(add,player.position[-1],[0,20])) in player.position) or player.position[-1][
-             -1] + 20 >= (game.game_height-20))),  # danger right
+            (player.x_change == 0 and player.y_change == -20 and ((list(map(add, player.position[-1], [20, 0])) in player.position) or
+                                                                  player.position[-1][0] + 20 > (game.game_width-20))) or (player.x_change == 0 and player.y_change == 20 and ((list(map(add, player.position[-1],
+                                                                                                                                                                                         [-20, 0])) in player.position) or player.position[-1][0] - 20 < 20)) or (player.x_change == -20 and player.y_change == 0 and ((list(map(
+                                                                                                                                                                                             add, player.position[-1], [0, -20])) in player.position) or player.position[-1][-1] - 20 < 20)) or (player.x_change == 20 and player.y_change == 0 and (
+                                                                                                                                                                                                 (list(map(add, player.position[-1], [0, 20])) in player.position) or player.position[-1][
+                                                                                                                                                                                                     -1] + 20 >= (game.game_height-20))),  # danger right
 
-             (player.x_change == 0 and player.y_change == 20 and ((list(map(add,player.position[-1],[20,0])) in player.position) or
-             player.position[-1][0] + 20 > (game.game_width-20))) or (player.x_change == 0 and player.y_change == -20 and ((list(map(
-             add, player.position[-1],[-20,0])) in player.position) or player.position[-1][0] - 20 < 20)) or (player.x_change == 20 and player.y_change == 0 and (
-            (list(map(add,player.position[-1],[0,-20])) in player.position) or player.position[-1][-1] - 20 < 20)) or (
-            player.x_change == -20 and player.y_change == 0 and ((list(map(add,player.position[-1],[0,20])) in player.position) or
-            player.position[-1][-1] + 20 >= (game.game_height-20))), #danger left
+            (player.x_change == 0 and player.y_change == 20 and ((list(map(add, player.position[-1], [20, 0])) in player.position) or
+                                                                 player.position[-1][0] + 20 > (game.game_width-20))) or (player.x_change == 0 and player.y_change == -20 and ((list(map(
+                                                                     add, player.position[-1], [-20, 0])) in player.position) or player.position[-1][0] - 20 < 20)) or (player.x_change == 20 and player.y_change == 0 and (
+                                                                         (list(map(add, player.position[-1], [0, -20])) in player.position) or player.position[-1][-1] - 20 < 20)) or (
+                player.x_change == -20 and player.y_change == 0 and ((list(map(add, player.position[-1], [0, 20])) in player.position) or
+                                                                     player.position[-1][-1] + 20 >= (game.game_height-20))),  # danger left
 
 
             player.x_change == -20,  # move left
@@ -55,13 +56,13 @@ class DQNAgent(object):
             food.x_food > player.x,  # food right
             food.y_food < player.y,  # food up
             food.y_food > player.y  # food down
-            ]
+        ]
 
         for i in range(len(state)):
             if state[i]:
-                state[i]=1
+                state[i] = 1
             else:
-                state[i]=0
+                state[i] = 0
 
         return np.asarray(state)
 
@@ -101,7 +102,8 @@ class DQNAgent(object):
         for state, action, reward, next_state, done in minibatch:
             target = reward
             if not done:
-                target = reward + self.gamma * np.amax(self.model.predict(np.array([next_state]))[0])
+                target = reward + self.gamma * \
+                    np.amax(self.model.predict(np.array([next_state]))[0])
             target_f = self.model.predict(np.array([state]))
             target_f[0][np.argmax(action)] = target
             self.model.fit(np.array([state]), target_f, epochs=1, verbose=0)
@@ -109,7 +111,18 @@ class DQNAgent(object):
     def train_short_memory(self, state, action, reward, next_state, done):
         target = reward
         if not done:
-            target = reward + self.gamma * np.amax(self.model.predict(next_state.reshape((1, 11)))[0])
+            target = reward + self.gamma * \
+                np.amax(self.model.predict(next_state.reshape((1, 11)))[0])
         target_f = self.model.predict(state.reshape((1, 11)))
         target_f[0][np.argmax(action)] = target
         self.model.fit(state.reshape((1, 11)), target_f, epochs=1, verbose=0)
+
+    def predict(self, state):
+        if random.randint(0, 200) < self.epsilon:
+            final_move = to_categorical(random.randint(0, 2), num_classes=3)
+        else:
+            prediction = self.model.predict(state.reshape((1, 11)))
+            final_move = to_categorical(
+                np.argmax(prediction[0]), num_classes=3)
+
+        return final_move
